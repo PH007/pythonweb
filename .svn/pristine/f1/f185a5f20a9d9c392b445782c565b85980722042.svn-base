@@ -1,0 +1,8 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.index, name='home'),
+    path('resize/', views.resize,name='resize'),
+    path('areaOfShape/', views.areaOfShape,name='areaOfShape'),
+]

@@ -1,0 +1,289 @@
+{% extends "pages/base.html" %}
+{% block add_file %}
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="//canjs.com/release/1.1.7/can.jquery.js"></script>
+
+{% endblock add_file %}
+
+{% block javascript_content %}
+<style>
+        #canvas {
+            position: relative;
+            user-select:none;
+          }
+          
+          .rect {
+            position: absolute;
+            border: 2px solid rgba(199, 25, 9, 0.64);
+            -webkit-user-select: none;  /* Chrome all / Safari all */
+            -moz-user-select: none;     /* Firefox all */
+            -ms-user-select: none;      /* IE 10+ */
+          
+            /* No support for these yet, use at own risk */
+            -o-user-select: none;
+            user-select: none;  
+          }
+
+</style>
+<script>
+       
+
+ function init(){
+    var Paper = can.Control(
+        {
+            defaults: {
+                rect: {
+                    minWidth: 10,
+                    minHeight: 10
+                }
+            }
+        },
+        {
+            /**
+             * Initialize
+             */
+            init: function() {
+    
+                // Bind event handlers
+                this.element.on('mousedown.paper', $.proxy(this.startDrawRect, this));
+            },
+    
+            /**
+             * Start drawing a rectangle
+             *
+             * @param   e
+             */
+            startDrawRect: function(e) {
+    
+                // Get canvas offset
+                var offset = this.element.offset();
+                this.canvasOffsetLeft = offset.left;
+                this.canvasOffsetTop = offset.top;
+    
+                // Save start positions
+                this.drawStartX = e.pageX - this.canvasOffsetLeft;
+                this.drawStartY = e.pageY - this.canvasOffsetTop;
+    
+                // Create the rectangle
+                this.drawingRect = this.createRect(this.drawStartX, this.drawStartY, 0, 0);
+    
+                // Bind event handlers
+                this.element.on('mousemove.paper', $.proxy(this.drawRect, this));
+                this.element.on('mouseup.paper', $.proxy(this.endDrawRect, this));
+            },
+    
+            /**
+             * Draw the rectangle
+             *
+             * @param   e
+             */
+            drawRect: function(e) {
+    
+                var currentX = e.pageX - this.canvasOffsetLeft;
+                var currentY = e.pageY - this.canvasOffsetTop;
+    
+                // Calculate the position and size of the rectangle we are drawing
+                var position = this.calculateRectPos(this.drawStartX, this.drawStartY, currentX, currentY);
+    
+                // Set position and size
+                this.drawingRect.css(position);
+            },
+    
+            /**
+             * Finish drawing the rectangle
+             *
+             * @param   e
+             */
+            endDrawRect: function(e) {
+    
+                var currentX = e.pageX - this.canvasOffsetLeft;
+                var currentY = e.pageY - this.canvasOffsetTop;
+    
+                // Calculate the position and size of the rectangle we are drawing
+                var position = this.calculateRectPos(this.drawStartX, this.drawStartY, currentX, currentY);
+    
+                if (position.width < this.options.rect.minWidth || position.height < this.options.rect.minHeight) {
+    
+                    // The drawn rectangle is too small, remove it
+                    this.drawingRect.remove();
+                }
+                else {
+    
+                    // Set position and size
+                    this.drawingRect.css(position);
+    
+                    // The rectangle is big enough, select it
+                    this.selectRect(this.drawingRect);
+                }
+    
+                // Unbind event handlers
+                this.element.off('mousemove.paper');
+                this.element.off('mouseup.paper');
+            },
+    
+            /**
+             * Create a rectangle
+             *
+             * @param   x
+             * @param   y
+             * @param   w
+             * @param   h
+             */
+            createRect: function(x, y, w, h) {
+    
+                return $('<canvas/>').addClass('rect').css({
+                    left: x,
+                    top: y,
+                    width: w,
+                    height: h
+                }).appendTo(this.element);
+            },
+    
+            /**
+             * Select the given rectangle
+             *
+             * @param   rect
+             */
+            selectRect: function(rect) {
+    
+                // Deselect the previous selected rectangle
+                this.selectedRect && this.selectedRect.removeClass('selected');
+    
+                // Select the given rectangle
+                this.selectedRect = rect;
+                this.selectedRect.addClass('selected');
+            },
+    
+            /**
+             * Calculate the start position and size of the rectangle by the mouse coordinates
+             *
+             * @param   startX
+             * @param   startY
+             * @param   endX
+             * @param   endY
+             * @returns {*}
+             */
+            calculateRectPos: function(startX, startY, endX, endY) {
+    
+                var width = endX - startX;
+                var height = endY - startY;
+                var posX = startX;
+                var posY = startY;
+    
+                if (width < 0) {
+                    width = Math.abs(width);
+                    posX -= width;
+                }
+    
+                if (height < 0) {
+                    height = Math.abs(height);
+                    posY -= height;
+                }
+    
+                return {
+                    left: posX,
+                    top: posY,
+                    width: width,
+                    height: height
+                };
+            }
+        }
+    );
+    
+    $(function() {
+        var paper = new Paper('#canvas', {});
+    });
+
+    function readURL(input) {
+
+        if (input.files && input.files[0]) {
+          var reader = new FileReader();
+      
+          reader.onload = function(e) {
+            document.getElementById('canvas').style.backgroundImage = "url(" + reader.result + ")";    
+          }
+      
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+
+
+    $("[name='myfile']").change(function(e){
+        readURL(this);       
+
+        var image, file;
+        if ((file = this.files[0])) {
+            img = new Image();
+            img.onload = function () {
+                $("#canvas").width(this.width).height(this.height);
+            };
+            img.src = URL.createObjectURL(file);
+        }
+    });
+
+    /*
+    var imgUrl = "{{uploaded_file_url}}";
+    if (imgUrl != ""){
+        img = new Image();
+        img.src = URL.createObjectURL(file);
+        $("#canvas").width(img.width).height(img.height);
+    }
+*/
+    $("#submit").click(function(e){
+
+        if ($("#myfile").get(0).files.length > 0){
+            $("#submit").submit();
+        }else{
+            e.preventDefault();
+        }
+    });
+ }
+
+
+
+document.addEventListener("DOMContentLoaded", init, false);
+
+
+
+</script>
+{% endblock javascript_content %}
+
+
+{% block title  %} Home {% endblock  %}
+{% block content %}
+
+    <a href="{% url 'resize' %}">Resize Image</a>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="myfile" id="myfile">
+        <button type="submit" id="submit">Upload</button>
+      </form>
+  
+      {% if uploaded_file_url %}
+        <p>File uploaded at: <a href="{{ uploaded_file_url }}">{{ uploaded_file_url }}</a></p>
+      {% endif %}
+
+    <div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-8">
+            <center>
+                <!-- <img id="myImg" src="{{uploaded_file_url}}" class="responsive-img"/> 
+                <div id="canvas"  width="500" height="500"></div>-->
+                <!-- <div style="background-image: url('{{uploaded_file_url}}');  background-repeat: no-repeat" id="canvas"></div>
+                -->
+                <div style="background-repeat: no-repeat" id="canvas"></div>
+            </center>
+        </div>
+
+        <div class="col-sm2">
+                start Position:<span id="start"></span>
+                <br />
+                End Position:<span id="end"></span>
+        </div>
+    </div>
+    </div>
+
+
+{% endblock %}

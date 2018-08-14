@@ -1,0 +1,526 @@
+{% extends "pages/base.html" %}
+{% block javascript_content %}
+
+<script src="static/js/can.jquery.js"></script>
+<script src="static/js/interact.js"></script>
+<script src="static/js/html2canvas.js"></script>
+<script src="static/js/jquery-migrate-3.0.1.min.js"></script>
+<script src="static/js/jquery-migrate-1.2.1.min.js"></script>
+
+<style>
+        #parentDiv {
+            width: 1200px;
+            height: 800px;
+            position: relative;
+            user-select:none;
+            background-position:center;
+            background-repeat: no-repeat;
+            background-size: cover;
+          }
+          
+        .rect {
+            border: 2px solid dodgerblue;
+            background: dodgerblue;
+            opacity: .5;
+            -webkit-user-select: none;  
+            -moz-user-select: none;    
+            -ms-user-select: none;     
+            -o-user-select: none;
+            user-select: none;  
+            position: absolute;
+        }
+
+        .selected {
+            background:moccasin;
+        }
+       
+        div.div_hover:hover {
+            background-color: moccasin;
+        }
+
+        .scrollable {
+            height: 90vh;
+            overflow-y: scroll;
+        }
+</style>
+<script>       
+
+ function init(){
+    //count shape created
+    var _countShape = 1;
+    //shape's minimum height
+    var _heightShapeMinimum = 30;
+    //shape's minimum width
+    var _widthShapeMinimum = 30;
+
+    //-------------- Resize - Move canvas on image START ----------------//
+    
+    //Declare events to resize - drag canvas on div image
+    interact('.resize-drag')
+    .draggable({
+        onmove: dragMoveListener,
+        restrict: {
+            restriction: 'parent',
+            elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
+        },
+
+    })
+    .resizable({
+        // resize from all edges and corners
+        edges: { left: true, right: true, bottom: true, top: true },
+    
+        // keep the edges inside the parent
+        restrictEdges: {
+          outer: 'parent',
+          endOnly: true,
+        },
+    
+        // minimum size
+        restrictSize: {
+          min: { width: _widthShapeMinimum, height: _heightShapeMinimum },
+        },
+    
+        inertia: true,
+      })
+    .on('resizemove', function (event) {
+        var target = event.target,
+            x = (parseFloat(target.getAttribute('data-x')) || 0),
+            y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+        // update the element's style
+        target.style.width  = event.rect.width + 'px';
+        target.style.height = event.rect.height + 'px';
+
+        // translate when resizing from top or left edges
+        x += event.deltaRect.left;
+        y += event.deltaRect.top;
+
+        target.style.webkitTransform = target.style.transform =
+            'translate(' + x + 'px,' + y + 'px)';
+
+        target.setAttribute('data-x', x);
+        target.setAttribute('data-y', y);
+        target.textContent = event.rect.width + '×' + event.rect.height;     
+    })
+    .on('resizeend', function (event) {
+        setCoordinateOfCanvas($(".selected")[0]);
+    })
+    .on('dragend', function (event) {
+        setCoordinateOfCanvas($(".selected")[0]);
+    });
+    
+    /**
+     * Drag canvas shape
+     * @param {event}  event
+     */
+    function dragMoveListener (event) {
+        var target = event.target,
+            // keep the dragged position in the data-x/data-y attributes
+            x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
+            y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+    
+        // translate the element
+        target.style.webkitTransform =
+        target.style.transform =
+            'translate(' + x + 'px, ' + y + 'px)';
+    
+        // update the posiion attributes
+        target.setAttribute('data-x', x);
+        target.setAttribute('data-y', y);
+    }    
+
+    /**
+     * Set coordinate of canvas shape into coordinate's label
+     * @param {DOMElement}  obj - canvas shape 
+     */
+    function setCoordinateOfCanvas(obj){         
+        var startX = obj.offsetLeft + parseInt(obj.getAttribute("data-x"));
+        var startY = obj.offsetTop + parseInt(obj.getAttribute("data-y"));
+        var endX = startX + obj.offsetWidth;
+        var endY = startY + obj.offsetHeight 
+        var canvasId = obj.id.split("_")[1];
+
+        $("#start_" + canvasId).text(formatCoordinateString(startX, startY));
+        $("#end_" + canvasId).text(formatCoordinateString(endX, endY));        
+    }
+    //-------------- Resize - Move canvas on image END ----------------//
+
+    //-------------- Draw canvas on image START ----------------//
+
+    //Initialize paper object and declare event to draw canvas on div image
+    var Paper = can.Control(
+        {
+            defaults: {
+                rect: {
+                    minWidth: _widthShapeMinimum,
+                    minHeight: _heightShapeMinimum
+                }
+            }
+        },
+        {
+            init: function() {    
+                // Bind event handlers
+                this.element.on('mousedown.paper', $.proxy(this.startDrawRect, this));
+            },
+    
+            /**
+             * Start drawing a rectangle
+             *
+             * @param   e
+             */
+            startDrawRect: function(e) {
+                if("canvas" === (e.srcElement.localName) || $("#myfile").get(0).files.length == 0){
+                    return;
+                }else if(e.which==3){//right click
+                    return;
+                }
+                // Get canvas offset
+                var offset = this.element.offset();
+                this.canvasOffsetLeft = offset.left;
+                this.canvasOffsetTop = offset.top;
+    
+                // Save start positions
+
+                this.drawStartX = e.pageX - this.canvasOffsetLeft;
+                this.drawStartY = e.pageY - this.canvasOffsetTop;
+    
+                // Create the rectangle
+                this.drawingRect = this.createRect(this.drawStartX, this.drawStartY, 0, 0);
+    
+                // Bind event handlers
+                this.element.on('mousemove.paper', $.proxy(this.drawRect, this));
+                this.element.on('mouseup.paper', $.proxy(this.endDrawRect, this));                
+            },
+    
+            /**
+             * Draw the rectangle
+             *
+             * @param   e
+             */
+            drawRect: function(e) {
+    
+                var currentX = e.pageX - this.canvasOffsetLeft;
+                var currentY = e.pageY - this.canvasOffsetTop;
+    
+                // Calculate the position and size of the rectangle we are drawing
+                var position = calculateRectPos(this.drawStartX, this.drawStartY, currentX, currentY);
+    
+                // Set position and size
+                this.drawingRect.css(position);
+            },
+    
+            /**
+             * Finish drawing the rectangle
+             *
+             * @param   e
+             */
+            endDrawRect: function(e) {
+                var currentX = e.pageX - this.canvasOffsetLeft;
+                var currentY = e.pageY - this.canvasOffsetTop;
+    
+                // Calculate the position and size of the rectangle we are drawing
+                var position = calculateRectPos(Math.round(this.drawStartX), Math.round(this.drawStartY), Math.round(currentX), Math.round(currentY));
+    
+                if (position.width < this.options.rect.minWidth || position.height < this.options.rect.minHeight) {
+    
+                    // The drawn rectangle is too small, remove it
+                    this.drawingRect.remove();
+                    detectAreaShape(e);
+                }
+                else {    
+                    // Set position and size
+                    this.drawingRect.css(position);    
+                    // The rectangle is big enough, select it
+                    this.selectRect(this.drawingRect);                    
+                    createCoordinateLabel(this.drawStartX, this.drawStartY, currentX, currentY);
+                }
+    
+                // Unbind event handlers
+                this.element.off('mousemove.paper');
+                this.element.off('mouseup.paper');
+            },
+    
+            /**
+             * Create a rectangle
+             *
+             * @param   x
+             * @param   y
+             * @param   w
+             * @param   h
+             */
+            createRect: function(x, y, w, h) {    
+                $(".rect").removeClass("selected");
+                return $('<canvas id="canvas_' + _countShape + '"/ >').addClass('rect resize-drag').css({
+                    left: x,
+                    top: y,
+                    width: w,
+                    height: h
+                }).appendTo(this.element);
+            },
+    
+            /**
+             * Select the given rectangle
+             *
+             * @param   rect
+             */
+            selectRect: function(rect) {
+    
+                // Deselect the previous selected rectangle
+                this.selectedRect && this.selectedRect.removeClass('selected');
+    
+                // Select the given rectangle
+                this.selectedRect = rect;
+                this.selectedRect.addClass('selected');
+            },
+    
+            
+        }
+    );
+    
+    /**
+     * Create paper object
+     */
+    $(function() {
+        var paper = new Paper('#parentDiv', {});
+    });
+
+    /**
+    * Calculate the start position and size of the rectangle by the mouse coordinates    *
+    * @param {int}  startX - coordinate start x
+    * @param {int}  startY - coordinate start y
+    * @param {int}  endX - coordinate end x
+    * @param {int}  endY - coordinate end y
+    * @returns {array} array of int value [x,y,width,height]
+    */
+    function calculateRectPos(startX, startY, endX, endY) {
+        var width = endX - startX;
+        var height = endY - startY;
+        var posX = startX;
+        var posY = startY;
+
+        if (width < 0) {
+            width = Math.abs(width);
+            posX -= width;
+        }
+
+        if (height < 0) {
+            height = Math.abs(height);
+            posY -= height;
+        }
+
+        return {
+            left: posX,
+            top: posY,
+            width: width,
+            height: height
+        };
+    }
+
+    /**
+     *   Create coordinate's label
+     *   @param {int} startX - coordinate start x
+     *   @param {int} startY - coordinate start y
+     *   @param {int} endX - coordinate end x
+     *   @param {int} endY - coordinate end y
+     */
+    function createCoordinateLabel(startX, startY, endX, endY){
+        var obj = $('<div id="coordinateValue_' + _countShape + '" class ="div_hover" / >').appendTo($("#coordinateValue"));
+            obj.append("項目"+_countShape );
+            obj.append("</br>" );
+            obj.append("<span id='start_" + _countShape+ "'>" + formatCoordinateString(startX, startY));
+            obj.append("</br>" );
+            obj.append("<span id='end_" + _countShape+ "'>" + formatCoordinateString(endX, endY));
+            obj.append("</br></br>" );
+            $('#coordinateValue').append(obj);
+            _countShape++;
+    }
+    
+    /**
+     *   Generate coordinate's string for label
+     *   @param {int} x - coordinate x
+     *   @param {int} y - coordinate y
+     *   @return {string} coordinate's string for label
+     */
+    function formatCoordinateString(x, y){
+        return "x: " + Math.round(x) + ", y: " + Math.round(y);
+    }
+    //-------------- Draw canvas on image END ----------------//
+    
+    /**
+     *   Change background of div image
+     *   @param {InputFile} input
+     */
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+          var reader = new FileReader();
+      
+          reader.onload = function(e) {
+            document.getElementById('parentDiv').style.backgroundImage = "url(" + reader.result + ")";    
+          }
+      
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+
+    /**
+     *   Change image file
+     *   @param {Event} e
+     */
+    $("[name='myfile']").change(function(e){
+        readURL(this);       
+
+        var file;
+        if ((file = this.files[0])) {
+            //reset
+            $("#coordinateValue").html("");
+            $('.rect').remove();
+            _countShape = 1;
+        }
+    });
+
+    /**
+     *   Detect area shape when click
+     *   @param {MouseEvent} e
+     */
+    function detectAreaShape(e){
+        // Get canvas offset
+        var offset = $("#parentDiv").offset();
+        clickX = e.pageX - offset.left;
+        clickY = e.pageY - offset.top;
+        //capture div image to canvas
+        html2canvas(document.querySelector("#parentDiv")).then(canvas => {       
+            //convert canvas to url    
+            var dataURL  = canvas.toDataURL("image/png"); 
+            //call method server side to detect area shape
+            $.ajax(
+                {
+                    type: "POST",
+                    url: "{% url 'areaOfShape' %}",
+                    data: 
+                    {
+                        csrfmiddlewaretoken: window.CSRF_TOKEN,
+                        imageData: dataURL,
+                        clickX: clickX,
+                        clickY: clickY
+                    },
+                    dataType: "JSON",
+                    success: function (result)
+                    {
+                        if(result.x != undefined && "" != result.x){
+                            var x = result.x;
+                            var y = result.y;
+                            var w = result.w;
+                            var h = result.h
+                            if (w < _widthShapeMinimum || h < _heightShapeMinimum) 
+                                return;
+                            createCoordinateLabel(x, y, x+w, y+h);
+                            $(".rect").removeClass("selected");
+                            return $('<canvas id="canvas_' + (_countShape-1)+ '"/ >').addClass('rect resize-drag selected').css({
+                                left: x,
+                                top: y,
+                                width: w,
+                                height: h
+                            }).appendTo($("#parentDiv"));
+                        }
+                    },
+                });
+        });
+    }
+
+    /**
+     *   Submit form
+     *   @param {MouseEvent} e
+     */
+    $("#submit").click(function(e){    
+        $(".rect").removeClass("selected");        
+        if ($("#myfile").get(0).files.length > 0){             
+            //capture div image to canvas
+            html2canvas(document.querySelector("#parentDiv")).then(canvas => {           
+                var dataURL  = canvas.toDataURL("image/png"); 
+                var fileName = $('#myfile')[0].files[0]['name'];
+                //send canvas to server side
+                $.ajax(
+                    {
+                        type: "POST",
+                        url: $("#form").attr("action"),
+                        data: 
+                        {
+                            csrfmiddlewaretoken: window.CSRF_TOKEN,
+                            imageData: dataURL,
+                            fileName: fileName
+                        },
+                        dataType: "JSON",
+                        success: function (result)
+                        {                            
+                            if(""==result.message){
+                                alert("File template duoc upload thanh cong.");
+                                window.location.reload();
+                            }else{
+                                alert(result.message);
+                            }
+                        },
+    
+                    });
+            });              
+        }else{
+            e.preventDefault();
+        }
+    }); 
+    
+    /**
+     *   Click on shape
+     */
+    $(document).on("click",".rect",function(){
+        $(".rect").removeClass("selected");
+        $(this).addClass("selected");
+    });
+
+    /**
+     *   Click on coordinate label to highlight shape
+     */
+    $(document).on("click",".div_hover",function(){
+        var id = this.id.split("_")[1];
+        $("#canvas_" + id).trigger("click");
+    });
+    
+    /**
+     *   Delete shape
+     *   @param {KeyboardEvent} e
+     */
+    document.onkeyup = function(e){
+        if(e.keyCode==46 && $(".selected").length > 0){
+            var canvasId = $(".selected")[0].id.split("_")[1];
+            $("#coordinateValue_" + canvasId).remove();
+            $(".selected").remove();
+        }
+    };
+
+}
+document.addEventListener("DOMContentLoaded", init, false);
+</script>
+
+{% endblock javascript_content %}
+
+
+{% block title  %} Home {% endblock  %}
+{% block content %}
+
+    <form id="form" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="myfile" id="myfile" accept="image/x-png,image/gif,image/jpeg">    
+        <button type="button" id="submit">Upload</button>
+    </form>
+    </br>
+
+    <div class="row" style="margin-right:0px">
+        <div class="col-md-10">
+            <center>
+                <div id="parentDiv" class="resize-container"></div>
+            </center>
+        </div>
+
+        <div class="col-md-2 scrollable" id="coordinateValue">  
+        </div>
+    </div>
+
+{% endblock %}
