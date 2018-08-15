@@ -1,0 +1,202 @@
+.drop-image-container {
+	border: 2px dashed #dfe0e1;
+	color: #dfe0e1;
+	text-align: center;
+	height: 100%;
+	font-size: 32px;
+}
+
+.drop-image-container.is-dragover {
+	border-color: #39ad68;		
+	background: #FFF;
+	color: #39ad68;
+}
+
+.drop-image-container.is-dragover > .glyphicon {
+	color: #39ad68;
+}
+
+.drop-image-content {
+	margin: auto;
+	position: absolute;
+	text-align:center;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 18px;
+}
+
+.drop-image-content .glyphicon {
+	display: block;
+}
+
+#lbl-file-input:hover {
+	color: #39ad68;
+}
+
+.info-container {
+	height: calc(100% - 60px);
+	margin: 0;
+	overflow: auto;
+}
+
+.btn-container {
+	width: 100%;
+	height: 50px;
+	margin: 10px 0px 0px 0px;
+}
+
+.mark-container {
+	position: relative;
+	width: 100%;
+	min-width: 170px;
+	padding: 10px 0px;
+	margin: 0px;
+	border: 1px solid rgba(81, 114, 255, 0.7);
+}
+
+.mark-container:hover {
+	background: rgba(38, 79, 255, 1.0) !important;
+	color: white;
+}
+
+.mark-container:nth-child(odd) {
+	background: rgba(81, 114, 255, 0.7);
+}
+
+.mark-container:nth-child(even) {
+	background: none;
+}
+
+.mark-coordinate-content {
+	padding-left: 20px;
+}
+
+.border {
+	border-color: rgba(81, 114, 255, 0.7) !important;
+}
+
+.mark-container > .remove-btn {
+	visibility: hidden;
+}
+
+.mark-container:hover > .remove-btn {
+	visibility: visible;
+}
+
+.remove-btn {
+	position: absolute;
+	top: 0;
+	right: 0;
+}
+
+.remove-btn:hover {
+	color: rgb(255, 0, 0);
+}
+
+.app-btn {
+	position: relative;
+	display: block;
+	float: right;
+	width: 120px;
+	height: 50px;
+	border-radius: 25px;
+}
+
+.btn-handle {
+	border: 2px solid rgba(38, 79, 255, 1.0);
+	background: rgba(38, 79, 255, 1.0);
+	color: white;
+}
+
+.btn-handle:hover {
+	background: white;
+	color: black;
+}
+
+.btn-handle:active {
+	background: rgba(38, 79, 255, 1.0);
+	color: white;
+}
+
+#custom-slider {
+	width: 40px;
+	height: 20px;
+	text-align: center;
+	top: -6px;
+}
+
+.info {
+	position: relative;
+	display: block;
+	margin-bottom: 5px;
+}
+
+#opacity-control {
+	padding: 0px 40px 0px 30px;
+	display: none;
+}
+
+.mark {
+	position: absolute;
+	background: rgba(81, 114, 255, 0.7);
+}
+
+.app-container, .content, .control {
+	height: 100%;
+}
+
+.app-container {
+	display: flex;
+}
+
+@media(min-width: 1600px) {
+	.app-container {
+		width: 1560px;
+	}
+}
+
+.content {
+	overflow: auto;
+	width: 100%;
+	flex: auto auto auto;
+}
+
+.content, .control {
+	padding: 15px;
+}
+
+.control {
+	width: 250px;
+	flex: 0 0 250px;
+}
+
+.img-holder-child {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+.RpCntr {
+	background: rgba(38, 79, 255, 1.0);
+	color: white;
+	padding: 5px 0px;
+}
+
+.RpCntr > p {
+	margin: 0;
+}
+
+.RpCntr > .remove-btn {
+	visibility: hidden;
+}
+
+.RpCntr:hover > .remove-btn {
+	visibility: visible;
+}
+
+#tmpl-lst {
+	width: calc(100% - 20px);
+	text-overflow: ellipsis;
+	margin-left: 20px;
+}

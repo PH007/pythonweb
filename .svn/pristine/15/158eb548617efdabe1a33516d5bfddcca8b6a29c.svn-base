@@ -1,0 +1,100 @@
+{% load static %}
+<html>
+<head>
+	<link rel="stylesheet" href="{% static 'coincide-images/css/bootstrap.css' %}" type="text/css">
+	<link rel="stylesheet" href=" {% static 'coincide-images/css/jquery-ui.min.css' %}" type="text/css">
+	<link rel="stylesheet" href=" {% static 'coincide-images/css/coincide-images.css' %}" type="text/css">
+	<script src="{% static 'coincide-images/js/jquery-3.3.1.min.js' %}"> </script>
+	<script src="{% static 'coincide-images/js/jquery-ui.min.js' %}"> </script>
+	<script src="{% static 'coincide-images/js/bootstrap.js' %}"> </script>
+	<script src="{% static 'coincide-images/js/coincide-images.js' %}"> </script>
+	{% csrf_token %}
+	<script type="text/javascript">
+		var csrftoken = $('[name=csrfmiddlewaretoken]').val();
+		$.ajaxSetup({
+			beforeSend: function(xhr, settings) {
+				xhr.setRequestHeader("X-CSRFToken", csrftoken);
+			}
+		});
+	</script>
+
+	<script type="text/javascript">
+		function GetCorrectImage(formdata) {
+			return new Promise((resolve, reject) => {
+				$.ajax({
+					url: "{% url 'Get_Correct_Image' %}",
+					method: "POST",
+					data: formdata,
+					cache: false,
+					contentType: false,
+					processData: false,
+					xhrFields: {
+						responseType: 'blob'
+					}
+				})
+				.done(data => resolve(data))
+				.fail(msg => reject(msg));
+			});	
+		}
+		
+		function GetTemplate(filePath) {
+			return new Promise((resolve, reject) => {
+				$.get({
+					url: "{% url 'Get_Template' %}",
+					data: {'file-path': filePath}
+				})
+				.done(data => resolve(data))
+				.fail(msg => reject(msg));
+			});
+		}
+	</script>
+	<title>画像比較</title>
+</head>
+<body>
+	<div class="container app-container">
+			<!-- Image Container -->
+			<div class="col-xs-8 border content">
+				<div id="drop-image" class="drop-image-container">
+					<p>帳票となる画像をアップロードする</p>
+					<div class="drop-image-content">
+						<input id="file-input" type="file" style="display:none" accept="image/*" />
+						<i class="glyphicon glyphicon-arrow-down" style="font-size:75px; "></i>
+						<p>ここに画像をドラッグするまたは<label id="lbl-file-input" for="file-input">ここをクリック</label>してアップロードする</p>
+					</div>
+				</div>
+				<div id="img-holder" style="display: none">
+					<img id="report-img" class="img-holder-child"/>
+					<img id="template-img" class="img-holder-child" style="display: none"/>
+				</div>
+			</div>
+			<!-- Detail Container -->
+			<div class="col-xs-4 border control">
+				<div class="row info-container">
+					<div class="info">
+						<div>
+							<p>テンプレート選択:</p>
+							<select id="tmpl-lst">
+								<option style="display:none"> -- テンプレートを選択する -- </option>
+								{% for tmpl in tmpl_lst %}
+									<option value="{{ tmpl }}">{{ tmpl }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<label class="info"><input type="checkbox" id="display-marks"/>読み取り範囲表示</label>
+					<label class="info"><input type="checkbox" id="display-template"/>テンプレート表示</label>
+					<div id="opacity-control" class="info">
+						<p>透過率</p>
+						<div id="opacity-slider">
+							<div id="custom-slider" class="ui-slider-handle btn-handle"></div>
+						</div>
+					</div>
+
+				</div>
+				<div class="row btn-container">
+					<input type="button" id="crt-rp-btn" class="app-btn btn-handle" value="自動補正" style="display: none"/>
+				</div>
+			</div>
+	</div>
+</body>
+</html>
