@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 from skimage import exposure
+import re
 
 class ImageProcess:
     DISTANCE_TOLERANCE = 0.7
@@ -57,5 +58,16 @@ class ImageProcess:
 
             return crt_img_buf.tostring()
         else:
-            raise ArithmeticError("Couldn't find enought matches - %d(at least %d) - between template and report" %(len(good_matches), self.MATCHES_NUMBER_TOLERANCE))
-            
+            raise ArithmeticError("テンプレートとなる画像が帳票と同じではありません。")
+            #raise ArithmeticError("Couldn't find enought matches - %d(at least %d) - between template and report" %(len(good_matches), self.MATCHES_NUMBER_TOLERANCE))
+
+class Common:  
+    @classmethod
+    def ConvertCoordsAPI(self, coords_str):
+        coord_lst = []
+        coord_str_lst = coords_str.splitlines()
+        for coord_str in coord_str_lst:
+            x1, y1, x2, y2 = list(filter(lambda x: x.isdigit(), re.split(', |: |/', coord_str)))
+            coord_dic = {"x1":int(x1), "y1": int(y1), "x2":int(x2), "y2":int(y2)}
+            coord_lst.append(coord_dic)
+        return coord_lst

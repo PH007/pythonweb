@@ -9,7 +9,7 @@ import re
 import numpy as np
 from django.core.files.base import ContentFile
 import sys
-from .services import ImageProcess
+from .services import ImageProcess, Common
 from django.conf import settings
 import glob, mimetypes, os
 from .models import Image
@@ -103,18 +103,20 @@ def find_contour(img, clickX, clickY):
     return contour
 
 class CoincideImages(TemplateView):
-    template_name = 'CoincideImages.html'
+    template_name = 'pages/CoincideImages.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super(CoincideImages, self).get_context_data(*args, **kwargs)
-        tmpl_lst = glob.glob("%s/*.*" %settings.MEDIA_ROOT)
+        tmpl_lst = list(map(lambda x: os.path.basename(x),glob.glob("%s/*.*" %settings.MEDIA_ROOT)))
         context['tmpl_lst'] = tmpl_lst
         return context
 
 def GetCorrectImage(request):
     if request.method == 'POST':
-        tmpl_img_stream = request.FILES['template'].file
         rp_img_stream = request.FILES['report'].file
+        tmpl_img_name = request.POST['template-name']
+        tmpl_img_path = os.path.join(settings.MEDIA_ROOT, tmpl_img_name)
+        tmpl_img_stream = open(tmpl_img_path, 'rb')
 
         try:
             crt_img_stream = ImageProcess.correctImage(tmpl_img_stream, rp_img_stream)
@@ -123,20 +125,19 @@ def GetCorrectImage(request):
         except ArithmeticError as e:
             return HttpResponseServerError(e.args)
         except Exception:
-            return HttpResponseServerError("Error on handle Correct Image function.")
+            return HttpResponseServerError("CorrectImageができません。")
             
 def GetTemplate(request):
     if request.method == 'GET':
-        file_path = request.GET['file-path']
+        file_name = request.GET['file-path']
 
         try:
-            tmpl_file = open(file_path, 'rb')
-            _, file_extension = os.path.splitext(file_path)
-            mimetype = mimetypes.types_map[file_extension]
-            
-            response = HttpResponse(tmpl_file, content_type= mimetype)
-            return response
+            img_coords_str = list(Image.objects.filter(image_name=file_name).values_list('image_coordinates', flat=True))[0]
+            response = {}
+            response['img-coords'] = Common.ConvertCoordsAPI(img_coords_str)
+            response['tmpl-img'] = os.path.join(settings.MEDIA_URL, file_name)
+            return JsonResponse(response)
         except IOError:
-            return HttpResponseServerError("Template file not found.")
+            return HttpResponseServerError("テンプレートが見つかりません。")
         except Exception as e:
             return HttpResponseServerError(e.args)

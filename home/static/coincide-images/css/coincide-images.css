@@ -3,6 +3,7 @@
 	color: #dfe0e1;
 	text-align: center;
 	height: 100%;
+	font-size: 32px;
 }
 
 .drop-image-container.is-dragover {
@@ -21,7 +22,8 @@
 	text-align:center;
 	top: 50%;
 	left: 50%;
-	transform: translate(-50%, -50%)
+	transform: translate(-50%, -50%);
+	font-size: 18px;
 }
 
 .drop-image-content .glyphicon {
@@ -118,7 +120,7 @@
 }
 
 #custom-slider {
-	width: 30px;
+	width: 40px;
 	height: 20px;
 	text-align: center;
 	top: -6px;
@@ -131,7 +133,7 @@
 }
 
 #opacity-control {
-	padding: 0px 30px;
+	padding: 0px 40px 0px 30px;
 	display: none;
 }
 

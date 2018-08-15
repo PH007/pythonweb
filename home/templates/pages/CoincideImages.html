@@ -23,6 +23,7 @@
 			return new Promise((resolve, reject) => {
 				$.ajax({
 					url: "{% url 'Get_Correct_Image' %}",
+					method: "POST",
 					data: formdata,
 					cache: false,
 					contentType: false,
@@ -40,28 +41,25 @@
 			return new Promise((resolve, reject) => {
 				$.get({
 					url: "{% url 'Get_Template' %}",
-					data: {'file-path': filePath},
-					xhrFields: {
-						responseType: 'blob'
-					}
+					data: {'file-path': filePath}
 				})
 				.done(data => resolve(data))
 				.fail(msg => reject(msg));
 			});
 		}
 	</script>
-	<title>Coincide Images</title>
+	<title>画像比較</title>
 </head>
 <body>
 	<div class="container app-container">
 			<!-- Image Container -->
 			<div class="col-xs-8 border content">
 				<div id="drop-image" class="drop-image-container">
-					<p>UPLOAD <span id='drop-image-title'>REPORT</span> IMAGE FILE.</p>
+					<p>帳票となる画像をアップロードする</p>
 					<div class="drop-image-content">
 						<input id="file-input" type="file" style="display:none" accept="image/*" />
 						<i class="glyphicon glyphicon-arrow-down" style="font-size:75px; "></i>
-						Drag image here or <label id="lbl-file-input" for="file-input">click to upload</label>
+						<p>ここに画像をドラッグするまたは<label id="lbl-file-input" for="file-input">ここをクリック</label>してアップロードする</p>
 					</div>
 				</div>
 				<div id="img-holder" style="display: none">
@@ -74,9 +72,9 @@
 				<div class="row info-container">
 					<div class="info">
 						<div>
-							<span>Template select:</span>
+							<p>テンプレート選択:</p>
 							<select id="tmpl-lst">
-								<option style="display:none"> -- select a template -- </option>
+								<option style="display:none"> -- テンプレートを選択する -- </option>
 								{% for tmpl in tmpl_lst %}
 									<option value="{{ tmpl }}">{{ tmpl }}</option>
 								{% endfor %}
